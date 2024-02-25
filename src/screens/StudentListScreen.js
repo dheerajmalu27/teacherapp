@@ -89,9 +89,23 @@ const StudentListScreen = ({navigation}) => {
             />
           ))}
         </Picker>
-
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            {
+              elevation: selectedClass ? 3 : 0,
+              backgroundColor: selectedClass ? '#3498db' : '#ecf4ff',
+            },
+          ]}
+          onPress={handleSubmit}
+          disabled={!selectedClass}>
+          <Text
+            style={[
+              styles.submitButtonText,
+              {color: selectedClass ? '#fff' : '#000'},
+            ]}>
+            Submit
+          </Text>
         </TouchableOpacity>
 
         <FlatList
@@ -163,6 +177,12 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginLeft: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#ecf0f1', // Light background color for disabled button
+  },
+  enabledButton: {
+    backgroundColor: '#3498db', // Dark background color for enabled button
   },
 });
 

@@ -16,11 +16,7 @@ import {
 } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
-import {
-  getData,
-  generateExcelFile,
-  deleteData,
-} from '../services/commonService';
+import {getData, generateCsvFile, deleteData} from '../services/commonService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Modal from 'react-native-modal';
 import BottomMenu from '../menu/BottomMenu';
@@ -270,7 +266,7 @@ const TestMarksListScreen = () => {
         '-' +
         item.testName +
         '-marks';
-      const filePath = await generateExcelFile(filename, transformedArray);
+      const filePath = await generateCsvFile(filename, transformedArray);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
     }
@@ -403,7 +399,7 @@ const TestMarksListScreen = () => {
           </View>
         </Modal>
       </ScrollView>
-      <BottomMenu navigation={navigation} route={route} />
+      {/* <BottomMenu navigation={navigation} route={route} /> */}
     </Provider>
   );
 };

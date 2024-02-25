@@ -1,6 +1,5 @@
 // utils/api.js
 import config from '../../config';
-// import { AsyncStorage } from 'react-native';
 
 const login = async (email, password) => {
   try {

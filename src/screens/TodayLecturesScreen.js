@@ -12,7 +12,10 @@ const TodayLecturesScreen = ({navigation}) => {
       try {
         const teacherId = await AsyncStorage.getItem('teacherId');
         const queryParams = {teacherId};
-        const response = await getData('getteachertimetable', queryParams);
+        const response = await getData(
+          'gettodaysteachertimetable',
+          queryParams,
+        );
 
         setLecturesData(response.teachertimetabledata);
       } catch (error) {

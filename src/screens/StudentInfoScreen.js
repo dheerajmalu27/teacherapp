@@ -265,6 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: 5,
     alignItems: 'center',
+    elevation: 3,
   },
   percentageLabel: {
     fontSize: 12,
@@ -280,6 +281,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: '#f0f0f0',
     borderRadius: 10,
+    elevation: 3,
   },
   tableRow: {
     flexDirection: 'row',

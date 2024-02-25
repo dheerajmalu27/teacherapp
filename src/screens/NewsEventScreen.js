@@ -1,4 +1,3 @@
-// Import necessary components and libraries
 import React, {useState, useEffect} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
 import {Provider, Snackbar} from 'react-native-paper';
@@ -13,6 +12,7 @@ const NewsEventScreen = () => {
   const [newsEvents, setNewsEvents] = useState([]);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [selectedTab, setSelectedTab] = useState('News'); // Default to 'News'
 
   // Function to fetch news events on page load
   useEffect(() => {
@@ -23,6 +23,11 @@ const NewsEventScreen = () => {
         const response = await getData('news', {});
         console.log(response);
         if (response && response.success) {
+          response.news.sort((a, b) => {
+            const dateA = new Date(a.newsEventDate);
+            const dateB = new Date(b.newsEventDate);
+            return dateB - dateA;
+          });
           setNewsEvents(response.news);
         }
       } catch (error) {
@@ -34,6 +39,13 @@ const NewsEventScreen = () => {
     fetchNewsEvents();
   }, []);
 
+  // Function to filter news events based on selected tab
+  const filteredNewsEvents = newsEvents.filter(item => {
+    return selectedTab === 'News'
+      ? item.newsEventType === 2
+      : item.newsEventType === 1;
+  });
+
   const handleNavigateToSection = section => {
     navigation.navigate(section);
     console.log(`Navigating to ${section}`);
@@ -42,9 +54,29 @@ const NewsEventScreen = () => {
   return (
     <Provider theme={theme}>
       <View style={styles.container}>
+        {/* Toggle buttons to switch between news and events */}
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton,
+              selectedTab === 'News' && styles.activeToggle,
+            ]}
+            onPress={() => setSelectedTab('News')}>
+            <Text style={styles.toggleButtonText}>News</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.toggleButton,
+              selectedTab === 'Events' && styles.activeToggle1,
+            ]}
+            onPress={() => setSelectedTab('Events')}>
+            <Text style={styles.toggleButtonText1}>Events</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* News Events List */}
         <FlatList
-          data={newsEvents}
+          data={filteredNewsEvents}
           keyExtractor={item => item.id.toString()}
           renderItem={({item}) => (
             <TouchableOpacity
@@ -115,6 +147,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#000',
   },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  toggleButton: {
+    width: '48%',
+    paddingVertical: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    textAlign: 'center',
+    // paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  activeToggle: {
+    // width: 'auto',
+    backgroundColor: '#faebf0', // Color for active toggle button
+    color: '#63316e',
+  },
+  activeToggle1: {
+    // width: 'auto',
+    backgroundColor: '#ecf4ff', // Color for active toggle button
+    color: '#194989',
+  },
+  toggleButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#63316e',
+  },
+  toggleButtonText1: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#194989',
+  },
   newsEventItem: {
     marginBottom: 20,
     padding: 10,
@@ -144,6 +210,7 @@ const styles = StyleSheet.create({
     color: '#63316e', // Secondary text color
   },
   date: {
+    textAlign: 'right',
     color: '#777',
   },
   datePrimary: {

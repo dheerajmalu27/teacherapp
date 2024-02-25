@@ -7,6 +7,7 @@ import {
   Modal,
   TouchableOpacity,
   useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import {
   Provider,
@@ -207,194 +208,196 @@ const HomeworkScreen = () => {
 
   return (
     <Provider theme={theme}>
-      <View style={styles.container}>
-        {/* Homework List */}
-        {homeworks.map(item => (
-          <View key={item.id} style={styles.homeworkItem}>
-            <View style={styles.homeworkHeader}>
-              <Text style={styles.text}>
-                {item.subName} {item.className}-{item.divName}
-              </Text>
-              <View style={styles.iconContainer}>
-                <TouchableOpacity onPress={() => openEditModal(item)}>
-                  <Ionicons
-                    name="create-outline"
-                    size={18}
-                    color="#3498db"
-                    style={styles.icon}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => openDeleteModal(item.id)}>
-                  <Ionicons
-                    name="trash-outline"
-                    size={18}
-                    color="#e74c3c"
-                    style={styles.icon}
-                  />
-                </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <View style={styles.container}>
+          {/* Homework List */}
+          {homeworks.map(item => (
+            <View key={item.id} style={styles.homeworkItem}>
+              <View style={styles.homeworkHeader}>
+                <Text style={styles.text}>
+                  {item.subName} {item.className}-{item.divName}
+                </Text>
+                <View style={styles.iconContainer}>
+                  <TouchableOpacity onPress={() => openEditModal(item)}>
+                    <Ionicons
+                      name="create-outline"
+                      size={18}
+                      color="#3498db"
+                      style={styles.icon}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => openDeleteModal(item.id)}>
+                    <Ionicons
+                      name="trash-outline"
+                      size={18}
+                      color="#e74c3c"
+                      style={styles.icon}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <Text style={styles.class}>{item.title}</Text>
-            <Text style={styles.description}>
-              <HTML
-                source={{html: item.description}}
-                contentWidth={contentWidth}
-              />
-            </Text>
-            <Text style={styles.date}>{item.deadline}</Text>
-          </View>
-        ))}
-
-        {/* FAB (Floating Action Button) */}
-        <FAB
-          style={styles.fab}
-          icon="plus"
-          onPress={() => {
-            toggleModal();
-            // Reset the form fields
-            setNewHomework({
-              id: '',
-              title: '',
-              description: '',
-              deadline: '',
-              classId: '',
-              divId: '',
-              subId: '',
-              className: '',
-              divName: '',
-              subName: '',
-            });
-          }}
-          visible={fabVisible}
-        />
-        {/* Modal for Adding or Editing Homework */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isModalVisible}
-          onRequestClose={toggleModal}>
-          <View style={styles.modalContainer}>
-            <View style={styles.headerContainer}>
-              <Text style={styles.modalHeader}>
-                {editHomework ? 'Edit Homework' : 'Give Homework'}
-              </Text>
-              <TouchableOpacity onPress={toggleModal}>
-                <Ionicons name="close-outline" size={30} color="#000" />
-              </TouchableOpacity>
-            </View>
-
-            <Picker
-              style={styles.picker}
-              selectedValue={newHomework.class}
-              onValueChange={(itemValue, itemIndex) => {
-                const selectedItem = data[itemIndex];
-                if (selectedItem) {
-                  setNewHomework({
-                    ...newHomework,
-                    class: itemValue,
-                    className: selectedItem.className,
-                    classId: selectedItem.classId,
-                    divName: selectedItem.divName,
-                    divId: selectedItem.divId,
-                    subName: selectedItem.subName,
-                    subId: selectedItem.subId,
-                  });
-                }
-              }}>
-              <Picker.Item label="Select Class Subject" value="" />
-              {data.map(item => (
-                <Picker.Item
-                  key={`${item.subName}-${item.className}-${item.divName}`}
-                  label={`${item.subName} ${item.className}-${item.divName}`}
-                  value={`${item.className}-${item.divName}`}
+              <Text style={styles.class}>{item.title}</Text>
+              <Text style={styles.description}>
+                <HTML
+                  source={{html: item.description}}
+                  contentWidth={contentWidth}
                 />
-              ))}
-            </Picker>
-            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-              <View style={styles.datePickerContainer}>
-                <Text style={styles.inputLabel}>Due Date</Text>
-                <Text>{newHomework.deadline}</Text>
+              </Text>
+              <Text style={styles.date}>{item.deadline}</Text>
+            </View>
+          ))}
+
+          {/* Modal for Adding or Editing Homework */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isModalVisible}
+            onRequestClose={toggleModal}>
+            <View style={styles.modalContainer}>
+              <View style={styles.headerContainer}>
+                <Text style={styles.modalHeader}>
+                  {editHomework ? 'Edit Homework' : 'Give Homework'}
+                </Text>
+                <TouchableOpacity onPress={toggleModal}>
+                  <Ionicons name="close-outline" size={30} color="#000" />
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={new Date()}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
+
+              <Picker
+                style={styles.picker}
+                selectedValue={newHomework.class}
+                onValueChange={(itemValue, itemIndex) => {
+                  const selectedItem = data[itemIndex];
+                  if (selectedItem) {
+                    setNewHomework({
+                      ...newHomework,
+                      class: itemValue,
+                      className: selectedItem.className,
+                      classId: selectedItem.classId,
+                      divName: selectedItem.divName,
+                      divId: selectedItem.divId,
+                      subName: selectedItem.subName,
+                      subId: selectedItem.subId,
+                    });
+                  }
+                }}>
+                <Picker.Item label="Select Class Subject" value="" />
+                {data.map(item => (
+                  <Picker.Item
+                    key={`${item.subName}-${item.className}-${item.divName}`}
+                    label={`${item.subName} ${item.className}-${item.divName}`}
+                    value={`${item.className}-${item.divName}`}
+                  />
+                ))}
+              </Picker>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <View style={styles.datePickerContainer}>
+                  <Text style={styles.inputLabel}>Due Date</Text>
+                  <Text>{newHomework.deadline}</Text>
+                </View>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              )}
+              <TextInput
+                label="Homework Text"
+                value={newHomework.title}
+                onChangeText={title => setNewHomework({...newHomework, title})}
+                style={styles.input}
               />
-            )}
-            <TextInput
-              label="Homework Text"
-              value={newHomework.title}
-              onChangeText={title => setNewHomework({...newHomework, title})}
-              style={styles.input}
-            />
-            <TextInput
-              label="Description"
-              value={newHomework.description}
-              onChangeText={description =>
-                setNewHomework({...newHomework, description})
-              }
-              multiline={true}
-              numberOfLines={4}
-              style={styles.textarea}
-            />
+              <TextInput
+                label="Description"
+                value={newHomework.description}
+                onChangeText={description =>
+                  setNewHomework({...newHomework, description})
+                }
+                multiline={true}
+                numberOfLines={4}
+                style={styles.textarea}
+              />
 
-            <Button
-              style={
-                newHomework.class &&
-                newHomework.title &&
-                newHomework.description &&
-                newHomework.deadline
-                  ? styles.addButtonEnabled
-                  : styles.addButtonDisabled
-              }
-              mode="contained"
-              onPress={handleAddHomework}
-              disabled={
-                !newHomework.class ||
-                !newHomework.title ||
-                !newHomework.description ||
-                !newHomework.deadline
-              }>
-              {editHomework ? 'Update Homework' : 'Add Homework'}
-            </Button>
-          </View>
-        </Modal>
+              <Button
+                style={
+                  newHomework.class &&
+                  newHomework.title &&
+                  newHomework.description &&
+                  newHomework.deadline
+                    ? styles.addButtonEnabled
+                    : styles.addButtonDisabled
+                }
+                mode="contained"
+                onPress={handleAddHomework}
+                disabled={
+                  !newHomework.class ||
+                  !newHomework.title ||
+                  !newHomework.description ||
+                  !newHomework.deadline
+                }>
+                {editHomework ? 'Update Homework' : 'Add Homework'}
+              </Button>
+            </View>
+          </Modal>
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isDeleteModalVisible}
-          onRequestClose={() => setDeleteModalVisible(false)}>
-          <View style={styles.modalContainerDelete}>
-            <Text style={styles.modalHeader}>Confirm Deletion</Text>
-            <Text>Are you sure you want to delete this homework?</Text>
-            <Button
-              style={styles.addButtonEnabled}
-              mode="contained"
-              onPress={handleDeleteConfirmation}>
-              Yes, Delete
-            </Button>
-            <Button
-              style={styles.addButtonDisabled}
-              mode="contained"
-              onPress={() => setDeleteModalVisible(false)}>
-              Cancel
-            </Button>
-          </View>
-        </Modal>
+          {/* Delete Confirmation Modal */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isDeleteModalVisible}
+            onRequestClose={() => setDeleteModalVisible(false)}>
+            <View style={styles.modalContainerDelete}>
+              <Text style={styles.modalHeader}>Confirm Deletion</Text>
+              <Text>Are you sure you want to delete this homework?</Text>
+              <Button
+                style={styles.addButtonEnabled}
+                mode="contained"
+                onPress={handleDeleteConfirmation}>
+                Yes, Delete
+              </Button>
+              <Button
+                style={styles.addButtonDisabled}
+                mode="contained"
+                onPress={() => setDeleteModalVisible(false)}>
+                Cancel
+              </Button>
+            </View>
+          </Modal>
 
-        {/* Snackbar for showing messages */}
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={() => setSnackbarVisible(false)}
-          duration={3000}>
-          {snackbarMessage}
-        </Snackbar>
-      </View>
+          {/* Snackbar for showing messages */}
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}>
+            {snackbarMessage}
+          </Snackbar>
+        </View>
+      </ScrollView>
+      {/* FAB (Floating Action Button) */}
+      <FAB
+        style={styles.fab}
+        icon="plus"
+        onPress={() => {
+          toggleModal();
+          // Reset the form fields
+          setNewHomework({
+            id: '',
+            title: '',
+            description: '',
+            deadline: '',
+            classId: '',
+            divId: '',
+            subId: '',
+            className: '',
+            divName: '',
+            subName: '',
+          });
+        }}
+        visible={fabVisible}
+      />
     </Provider>
   );
 };
@@ -411,9 +414,13 @@ const theme = {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: 'relative',
     padding: 20,
     backgroundColor: '#fff',
     color: '#000',
+  },
+  scrollViewContainer: {
+    flexGrow: 1, // Important to enable scrolling
   },
   homeworkItem: {
     marginBottom: 20,

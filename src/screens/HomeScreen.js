@@ -1,5 +1,13 @@
 import React, {useState, useLayoutEffect, useEffect} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, FlatList} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  BackHandler,
+  ToastAndroid,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import BottomMenu from '../menu/BottomMenu';
 import {useRoute} from '@react-navigation/native';
@@ -8,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({navigation}) => {
   const [lecturesData, setLecturesData] = useState([]);
+  const [backPressedOnce, setBackPressedOnce] = useState(false);
   const route = useRoute();
 
   useLayoutEffect(() => {
@@ -21,18 +30,56 @@ const HomeScreen = ({navigation}) => {
       try {
         const teacherId = await AsyncStorage.getItem('teacherId');
         const queryParams = {teacherId};
-        const response = await getData('getteachertimetable', queryParams);
+        const response = await getData(
+          'gettodaysteachertimetable',
+          queryParams,
+        );
         console.log(response);
-
-        setLecturesData(response.teachertimetabledata);
+        if (
+          response &&
+          response.teachertimetabledata != 'undefined' &&
+          response.teachertimetabledata.length > 0
+        ) {
+          setLecturesData(response.teachertimetabledata);
+        }
       } catch (error) {
         console.error('Error fetching teacher timetable data:', error);
       }
     };
 
     fetchData();
+    // Add BackHandler event listener
+    // Add BackHandler event listener
+    // if (
+    //   navigation.isFocused() &&
+    //   navigation.getCurrentRoute().name === 'Home'
+    // ) {
+    //   // Add the back press event listener
+    //   const backHandler = BackHandler.addEventListener(
+    //     'hardwareBackPress',
+    //     handleBackPress,
+    //   );
+
+    //   // Cleanup function to remove the event listener
+    //   return () => backHandler.remove();
+    // }
   }, []);
 
+  const handleBackPress = () => {
+    BackHandler.exitApp();
+    return true;
+    // if (!backPressedOnce) {
+    //   ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+    //   setBackPressedOnce(true);
+    //   setTimeout(() => {
+    //     setBackPressedOnce(false);
+    //   }, 6000); // Reset backPressedOnce after 2 seconds
+    //   return true; // Prevent default back action
+    // } else {
+    //   BackHandler.exitApp(); // Close the app
+    //   return true; // Prevent default back action
+    // }
+  };
   const handleNavigateToSection = section => {
     navigation.navigate(section);
     console.log(`Navigating to ${section}`);
@@ -49,19 +96,19 @@ const HomeScreen = ({navigation}) => {
     },
     {
       id: '2',
-      section: 'Attendancelist',
+      section: 'AttendanceList',
       text: 'Attendance',
       icon: 'calendar-outline',
       iconColor: '#63316e',
-      backgroundColor: '#faebf0', //#4f9a93
+      backgroundColor: '#faebf0', // Light Pink
     },
     {
       id: '3',
-      section: 'Testmarkslist',
-      text: 'Testmarks',
+      section: 'TestMarksList',
+      text: 'Test Marks',
       icon: 'list-outline',
       iconColor: '#4f9a93',
-      backgroundColor: '#e6f4f4',
+      backgroundColor: '#e6f4f4', // Light Cyan
     },
     {
       id: '4',
@@ -69,7 +116,7 @@ const HomeScreen = ({navigation}) => {
       text: 'Timetable',
       icon: 'alarm-outline',
       iconColor: '#222c50',
-      backgroundColor: '#e4e8f4',
+      backgroundColor: '#e4e8f4', // Light Grey
     },
     {
       id: '5',
@@ -77,7 +124,7 @@ const HomeScreen = ({navigation}) => {
       text: 'Home Work',
       icon: 'book-outline',
       iconColor: '#7f803c',
-      backgroundColor: '#f6f4dd',
+      backgroundColor: '#f6f4dd', // Light Yellow
     },
     {
       id: '6',
@@ -85,15 +132,15 @@ const HomeScreen = ({navigation}) => {
       text: 'Student Info',
       icon: 'person-circle-outline',
       iconColor: '#944a63',
-      backgroundColor: '#f7ecf0',
+      backgroundColor: '#f7ecf0', // Light Lavender
     },
     {
       id: '7',
-      section: 'Testmarkslist',
-      text: 'Message',
+      section: 'Messages',
+      text: 'Messages',
       icon: 'chatbox-outline',
       iconColor: '#9c5786',
-      backgroundColor: '#f8edf5',
+      backgroundColor: '#ddf4e2', // Light Green
     },
     {
       id: '8',
@@ -101,15 +148,39 @@ const HomeScreen = ({navigation}) => {
       text: 'News & Event',
       icon: 'megaphone-outline',
       iconColor: '#152848',
-      backgroundColor: '#ddf4e2',
+      backgroundColor: '#e4effc', // Light Sky Blue
     },
     {
       id: '9',
       section: 'Logout',
       text: 'Logout',
       icon: 'log-out',
-      iconColor: '#152848',
-      backgroundColor: '#ddf4e2',
+      iconColor: '#3c7575',
+      backgroundColor: '#e2f4f4', // Light Turquoise
+    },
+    {
+      id: '10',
+      section: 'SubjectReport',
+      text: 'Subject Reports',
+      icon: 'document-outline',
+      iconColor: '#7f803c',
+      backgroundColor: '#f6f4dd', // Light Yellow
+    },
+    {
+      id: '11',
+      section: 'AttendanceReport',
+      text: 'Attendance Report',
+      icon: 'clipboard-outline',
+      iconColor: '#3c7575',
+      backgroundColor: '#e2f4f4', // Light Turquoise
+    },
+    {
+      id: '12',
+      section: 'TestReport',
+      text: 'Test Report',
+      icon: 'bar-chart-outline',
+      iconColor: '#944a63',
+      backgroundColor: '#f7ecf0', // Light Lavender
     },
   ];
 
@@ -158,22 +229,24 @@ const HomeScreen = ({navigation}) => {
       />
 
       {/* Today's Lectures */}
-      <View style={styles.todayLecturesContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.todayLecturesTitle}>Today's Lectures</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('TodayLectures')}>
-            <Text style={styles.viewAllText}>View All</Text>
-          </TouchableOpacity>
+      {lecturesData.length > 0 && (
+        <View style={styles.todayLecturesContainer}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.todayLecturesTitle}>Today's Lectures</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('TodayLectures')}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lecturesData}
+            keyExtractor={item => item.id}
+            renderItem={renderLectureItem}
+            horizontal
+            pagingEnabled
+          />
         </View>
-        <FlatList
-          data={lecturesData}
-          keyExtractor={item => item.id}
-          renderItem={renderLectureItem}
-          horizontal
-          pagingEnabled
-        />
-      </View>
+      )}
 
       <BottomMenu navigation={navigation} route={route} />
     </View>
@@ -186,7 +259,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderColor: 'grey',
     borderRadius: 10,
-    // padding: 16,
+    // padding: 10,
   },
   buttonContainer: {
     justifyContent: 'space-between',

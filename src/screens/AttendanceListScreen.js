@@ -1,251 +1,268 @@
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
-import {FAB} from 'react-native-paper';
-import {Button, IconButton, Provider} from 'react-native-paper';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import BottomMenu from '../menu/BottomMenu';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {Calendar} from 'react-native-calendars';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getData} from '../services/commonService';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-const dummyData = [
-  {id: 1, date: '2023-01-01', present: true},
-  {id: 2, date: '2023-01-02', present: false},
-  // Add more dummy data as needed
-];
-
-const AttendanceListScreen = () => {
+import {FAB} from 'react-native-paper';
+import BottomMenu from '../menu/BottomMenu';
+const AttendanceListScreen = ({navigation, route}) => {
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [attendanceData, setAttendanceData] = useState({});
+  const [markedDates, setMarkedDates] = useState({});
+  const [disabledDates, setDisabledDates] = useState([]);
+  const [selectedDateAttendanceData, setSelectedDateAttendanceData] =
+    useState(null);
   const [fabVisible, setFabVisible] = useState(true);
-  const navigation = useNavigation();
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [classId, setClassId] = useState(null);
-  const [divId, setDivId] = useState(null);
+  const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+  const [currentDate, setCurrentDate] = useState(
+    new Date().toISOString().split('T')[0],
+  );
+  const disabledDaysIndexes = [0]; // Disable Sundays
+
+  // Function to fetch attendance data from API
+  const fetchAttendanceData = async () => {
+    try {
+      const storedClassId = await AsyncStorage.getItem('classId');
+      const storedDivId = await AsyncStorage.getItem('divId');
+
+      // Simulated API call to fetch data
+      const queryParams = {classId: storedClassId, divId: storedDivId};
+      const response = await getData('getattendancelist', queryParams);
+      console.log(response);
+      // Parsing the response to extract dates and their attendance status
+      const parsedData = {};
+      response.forEach(item => {
+        parsedData[item.selectedDate] = {
+          present: item.totalPresent,
+          absent: item.total - item.totalPresent,
+          className: item.className,
+          classId: item.classId,
+          divName: item.divName,
+          divId: item.divId,
+          selectedDate: item.selectedDate,
+        };
+        const selectedDate = new Date(item.selectedDate);
+        // if (selectedDate.getDay() === 0) {
+        //   // Sunday check
+        //   disabledDates.push(item.selectedDate);
+        // }
+      });
+
+      // Set attendance data state
+      setAttendanceData(parsedData);
+
+      // Mark dates with attendance data and set their color to green
+      const markedDates = {};
+      Object.keys(parsedData).forEach(date => {
+        markedDates[date] = {
+          marked: true,
+          dotColor: '#63316e',
+          selected: true,
+          selectedColor: '#faebf0',
+        };
+      });
+      setMarkedDates(markedDates);
+      setDisabledDates(disabledDates);
+      // Check if today's date record is present and set calendar visibility accordingly
+      const todayDateString = new Date().toISOString().split('T')[0];
+      setIsCalendarVisible(true);
+    } catch (error) {
+      console.error('Error fetching attendance data:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch classId and divId from AsyncStorage
-        const storedClassId = await AsyncStorage.getItem('classId');
-        const storedDivId = await AsyncStorage.getItem('divId');
+    fetchAttendanceData();
+    // if (route.params?.reload) {
+    //   fetchAttendanceData();
+    // }
+    // fetchAttendanceData();
+  }, [route.params?.reload]);
 
-        // Set classId and divId in component state
-        setClassId(storedClassId);
-        setDivId(storedDivId);
-
-        // Simulated API call to fetch data
-        const queryParams = {classId: storedClassId, divId: storedDivId};
-        const response = await getData('getattendancelist', queryParams);
-        console.log(response);
-        // Assuming response.data contains the attendance list
-        setData(response);
-      } catch (error) {
-        console.error('Error fetching attendance list:', error);
-      }
-    };
-
-    fetchData();
-  }, []); // Empty dependency array to run this effect only once on component mount
-
-  useEffect(() => {
-    setFilteredData(
-      data.filter(item =>
-        item.selectedDate.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    );
-  }, [searchQuery, data]);
-  const route = useRoute();
-  const handleLoadMore = () => {
-    setPage(prevPage => prevPage + 1);
+  // Function to handle date selection
+  const handleDateSelect = date => {
+    setSelectedDate(date.dateString);
+    if (attendanceData[date.dateString]) {
+      setSelectedDateAttendanceData(attendanceData[date.dateString]);
+    } else {
+      // console.log(date.dateString);
+      navigation.navigate('AddAttendance', {date: date.dateString});
+    }
   };
 
-  const handleEdit = id => {
-    console.log('Edit item with ID:', id);
+  // Function to handle editing the attendance record
+  const handleEdit = item => {
+    // console.log('Edit item with ID:', item);
+    navigation.navigate('AddAttendance', {editdate: item.selectedDate});
   };
 
-  const handleDelete = id => {
-    console.log('Delete item with ID:', id);
+  const handleDelete = item => {
+    console.log('Delete item with ID:', item);
   };
 
+  // Function to handle exporting to Excel
   const handleExportToExcel = item => {
     console.log('Exporting item to Excel:', item);
   };
 
-  const renderItem = ({item}) => (
-    <View style={styles.row}>
-      <Text style={styles.cell}>{item.selectedDate}</Text>
-      <Text style={styles.cell}>
-        {item.totalPresent}/{item.total}
-      </Text>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          onPress={() => handleEdit(item)}
-          style={styles.iconButton}>
-          <MaterialCommunityIcons name="pencil" size={25} color="#3498db" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDelete(item)}
-          style={[styles.iconButton, styles.deleteButton]}>
-          <MaterialCommunityIcons name="delete" size={25} color="#e74c3c" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleExportToExcel(item)}
-          style={styles.iconButton}>
-          <MaterialCommunityIcons name="file-excel" size={25} color="#27ae60" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderModal = () => (
-    <Modal visible={showModal} animationType="slide" transparent>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <IconButton
-            icon={() => <Ionicons name="ios-close" size={30} color="#e74c3c" />}
-            onPress={() => setShowModal(false)}
-            style={styles.closeIcon}
-          />
-          <Text style={styles.modalHeader}>Your Modal Content Here</Text>
-        </View>
-      </View>
-    </Modal>
-  );
-
   return (
-    <Provider>
-      <View style={styles.container}>
-        <View style={styles.filterContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by date..."
-            placeholderTextColor="#777"
-            value={searchQuery}
-            onChangeText={text => setSearchQuery(text)}
+    <View style={styles.container}>
+      {isCalendarVisible && (
+        <View style={styles.calendarContainer}>
+          <Calendar
+            disabledDaysIndexes={disabledDaysIndexes}
+            maxDate={currentDate}
+            onDayPress={handleDateSelect}
+            markedDates={{
+              ...markedDates,
+              ...disabledDates.reduce((acc, date) => {
+                acc[date] = {disabled: true};
+                return acc;
+              }, {}),
+            }}
+            theme={{
+              calendarBackground: '#fff',
+              textSectionTitleColor: '#b6c1cd',
+              selectedDayBackgroundColor: '#194989',
+              selectedDayTextColor: '#63316e',
+              todayTextColor: '#00adf5',
+              dayTextColor: '#2d4150',
+              textDisabledColor: '#d9e1e8',
+              dotColor: 'red',
+              selectedDotColor: '#ffffff',
+              arrowColor: '#63316e',
+              monthTextColor: '#194989',
+              indicatorColor: 'blue',
+              textDayFontFamily: 'monospace',
+              textMonthFontFamily: 'monospace',
+              textDayHeaderFontFamily: 'monospace',
+              textDayFontWeight: '300',
+              textMonthFontWeight: 'bold',
+              textDayHeaderFontWeight: '300',
+              textDayFontSize: 16,
+              textMonthFontSize: 16,
+              textDayHeaderFontSize: 16,
+            }}
           />
         </View>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Date</Text>
-          <Text style={styles.headerText}>Attendance</Text>
-          <Text style={styles.headerText}>Actions</Text>
+      )}
+      {selectedDateAttendanceData && (
+        <View style={styles.attendanceContainer}>
+          <Text style={styles.selectedDateText}>
+            Attendance for {selectedDate}
+          </Text>
+          <View style={styles.dataContainer}>
+            <Text style={styles.dataText}>
+              Total Present: {selectedDateAttendanceData.present}
+            </Text>
+            <Text style={styles.dataText}>
+              Total Absent: {selectedDateAttendanceData.absent}
+            </Text>
+          </View>
+          {/* Edit, Delete, and Export to Excel buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.editButton]}
+              onPress={() => handleEdit(selectedDateAttendanceData)}>
+              <MaterialCommunityIcons name="pencil" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.deleteButton]}
+              onPress={() => handleDelete(selectedDateAttendanceData)}>
+              <MaterialCommunityIcons name="delete" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.exportButton]}
+              onPress={() => handleExportToExcel(selectedDateAttendanceData)}>
+              <MaterialCommunityIcons
+                name="file-excel"
+                size={20}
+                color="#fff"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-        <FlatList
-          data={filteredData}
-          renderItem={renderItem}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1}
-        />
-        <FAB
-          style={styles.fab}
-          icon="plus"
-          onPress={() => navigation.navigate('AddAttendance')}
-          visible={fabVisible}
-        />
-
-        {renderModal()}
-      </View>
+      )}
+      {/* <FAB
+        style={styles.fab}
+        icon="plus"
+        onPress={() =>
+          navigation.navigate('AddAttendance', {
+            disabledDates: Object.keys(markedDates),
+          })
+        }
+        visible={fabVisible}
+      /> */}
       <BottomMenu navigation={navigation} route={route} />
-    </Provider>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff', // Set background color to white
-  },
-  header: {
-    flexDirection: 'row',
+    position: 'relative',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    backgroundColor: '#f0f0f0', // Set background color to a light gray
-  },
-  headerText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#333', // Dark gray text color
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    borderColor: '#aaa', // Light gray border color
-    borderWidth: 1,
-    marginRight: 8,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    color: '#333', // Dark gray text color
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  cell: {
-    flex: 1,
-    textAlign: 'center',
-    color: '#333', // Dark gray text color
-  },
-  actionButtons: {
-    flexDirection: 'row',
-  },
-  iconButton: {
-    margin: 1,
-    padding: 1,
-  },
-  deleteButton: {
-    marginLeft: 5,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
     backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: 300,
-    alignItems: 'center',
-    justifyContent: 'center',
+    // padding: 10,
   },
-  modalHeader: {
-    fontSize: 20,
+  calendarContainer: {
+    // marginBottom: 20,
+  },
+  attendanceContainer: {
+    position: 'absolute',
+    bottom: 100, // Adjust this value as needed to leave space for the BottomMenu
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: '#faebf0',
+    borderRadius: 5,
+    elevation: 3,
+  },
+  selectedDateText: {
     fontWeight: 'bold',
     marginBottom: 10,
-    textAlign: 'center',
-    color: '#333',
+    color: '#63316e',
   },
-  closeIcon: {
+  dataContainer: {
+    marginBottom: 10,
+  },
+  dataText: {
+    color: '#63316e',
+    marginBottom: 5,
+  },
+  buttonContainer: {
     position: 'absolute',
     top: 10,
     right: 10,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+  },
+  button: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  editButton: {
+    backgroundColor: '#3498db',
+    elevation: 3,
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+    elevation: 3,
+  },
+  exportButton: {
+    backgroundColor: '#27ae60',
+    elevation: 3,
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
-    bottom: 0,
+    bottom: 60,
+    zIndex: 1,
   },
 });
 

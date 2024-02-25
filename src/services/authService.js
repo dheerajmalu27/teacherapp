@@ -2,6 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const checkAuth = async () => {
+  // const navigation = useNavigation();
   try {
     // Check if the authToken is stored in AsyncStorage
     const authToken = await AsyncStorage.getItem('authToken');

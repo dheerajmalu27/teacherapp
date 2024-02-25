@@ -1,6 +1,8 @@
 import React, {useState, useEffect} from 'react';
 import {View, StyleSheet, Text, FlatList, TouchableOpacity} from 'react-native';
 import {LocaleConfig} from 'react-native-calendars';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getData, generateCsvFile, deleteData} from '../services/commonService';
 
 LocaleConfig.locales['en'] = {
   monthNames: [
@@ -44,79 +46,91 @@ LocaleConfig.locales['en'] = {
 };
 
 LocaleConfig.defaultLocale = 'en';
+const dayColors = [
+  '#ecf4ff', // Sunday
+  '#faebf0', // Monday
+  '#e6f4f4', // Tuesday
+  '#e4e8f4', // Wednesday
+  '#f6f4dd', // Thursday
+  '#f8edf5', // Friday
+  '#ddf4e2', // Saturday
+]; // Define an array of colors for each day
 
 const TimeTableScreen = () => {
   const [items, setItems] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
 
   useEffect(() => {
-    // Fetch and set your data here, e.g., from an API
-    // For simplicity, I'll use the provided dummy data
-    const dummyData = [
-      {
-        id: 1,
-        day: 'Friday',
-        name: 'Event 1',
-        from: '10:00 AM',
-        to: '12:00 PM',
-      },
-      {
-        id: 2,
-        day: 'Wednesday',
-        name: 'Event 2',
-        from: '02:00 PM',
-        to: '04:00 PM',
-      },
-      {
-        id: 3,
-        day: 'Monday',
-        name: 'Event 1',
-        from: '10:00 AM',
-        to: '12:00 PM',
-      },
-      {
-        id: 4,
-        day: 'Tuesday',
-        name: 'Event 2',
-        from: '02:00 PM',
-        to: '04:00 PM',
-      },
-      // Add more data as needed
-    ];
+    const fetchData = async () => {
+      const teacherId = await AsyncStorage.getItem('teacherId');
 
-    const groupedData = {};
-    dummyData.forEach(item => {
-      if (!groupedData[item.day]) {
-        groupedData[item.day] = [];
+      try {
+        const queryParams = {teacherId};
+        const response = await getData('getteachertimetable', queryParams);
+        // console.log(response);
+
+        if (
+          response &&
+          response.success &&
+          Array.isArray(response.teachertimetabledata)
+        ) {
+          const groupedData = {};
+          response.teachertimetabledata.forEach(item => {
+            if (!groupedData[item.dayId]) {
+              groupedData[item.dayId] = [];
+            }
+            groupedData[item.dayId].push(item);
+          });
+          console.log(groupedData);
+          setItems(Object.entries(groupedData));
+        } else {
+          console.error('Error: Invalid response format');
+        }
+      } catch (error) {
+        console.error('Error fetching test marks data:', error);
       }
-      groupedData[item.day].push(item);
-    });
+    };
 
-    setItems(Object.entries(groupedData));
+    fetchData();
   }, []);
 
   const renderDayItem = ({item}) => (
     <View style={styles.eventContainer}>
-      <View style={styles.tableContainer}>
+      <View
+        style={[
+          styles.tableContainer,
+          {backgroundColor: dayColors[item.dayId]},
+        ]}>
         <View style={styles.tableRow}>
-          <Text style={styles.tableLabel}>Event Name</Text>
-          <Text style={styles.tableValue}>{item.name}</Text>
+          <Text style={styles.tableLabel}>Subject Class</Text>
+          <Text style={styles.tableValue}>
+            {`${item.title.trim()}-${item.className.trim()} ${item.divName.trim()}`}
+          </Text>
         </View>
         <View style={styles.tableRow}>
-          <Text style={styles.tableLabel}>From</Text>
-          <Text style={styles.tableValue}>{item.from}</Text>
+          <Text style={styles.tableLabel}>Start Time</Text>
+          <Text style={styles.tableValue}>{item.start}</Text>
         </View>
         <View style={styles.tableRow}>
-          <Text style={styles.tableLabel}>To</Text>
-          <Text style={styles.tableValue}>{item.to}</Text>
+          <Text style={styles.tableLabel}>End Time</Text>
+          <Text style={styles.tableValue}>{item.end}</Text>
         </View>
       </View>
     </View>
   );
-
+  useEffect(() => {
+    if (selectedDay) {
+      console.log(selectedDay);
+      console.log('items');
+      console.log(items[0]);
+      const filteredItems = items.filter(item => item[0] === selectedDay);
+      console.log('Filtered Items:', filteredItems);
+    }
+  }, [selectedDay, items]);
   const handleDayPress = day => {
-    // Update the selected day
+    console.log('day:' + day);
     setSelectedDay(day);
+    console.log('items');
   };
 
   const filteredItems = selectedDay
@@ -125,44 +139,14 @@ const TimeTableScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* <Text style={styles.title}>Weekly Schedule</Text> */}
-      <FlatList
-        style={styles.FlatList}
-        data={Object.keys(LocaleConfig.locales['en'].dayNames)}
-        keyExtractor={(day, index) => index.toString()}
-        renderItem={({item}) => (
-          <TouchableOpacity
-            onPress={() =>
-              handleDayPress(LocaleConfig.locales['en'].dayNames[item])
-            }>
-            <View
-              style={[
-                styles.dayContainer,
-                selectedDay === LocaleConfig.locales['en'].dayNames[item] &&
-                  styles.selectedDayContainer,
-              ]}>
-              <Text
-                style={[
-                  styles.dayText,
-                  selectedDay === LocaleConfig.locales['en'].dayNames[item] &&
-                    styles.selectedDayText,
-                ]}>
-                {LocaleConfig.locales['en'].dayNames[item]}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        horizontal
-      />
-      {selectedDay && (
-        <Text style={styles.date}>{`Events for ${selectedDay}`}</Text>
-      )}
       <FlatList
         data={filteredItems}
         keyExtractor={item => item[0]}
         renderItem={({item}) => (
           <View>
-            <Text style={styles.date}>{item[0]}</Text>
+            <Text style={styles.date}>
+              {LocaleConfig.locales['en'].dayNames[new Date(item[0]).getDay()]}
+            </Text>
             <FlatList
               data={item[1]}
               keyExtractor={event => event.id.toString()}
@@ -181,18 +165,10 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#2c3e50',
-  },
   FlatList: {
     margin: 10,
   },
   dayContainer: {
-    // flex: 4,
-    // marginBottom: 10,
     height: 40,
     padding: 8,
     borderRadius: 5,
